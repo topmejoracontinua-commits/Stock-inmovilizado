@@ -94,6 +94,20 @@
     color: #f87171;
     display: none;
   }
+
+  .fallback {
+    margin-top: 16px;
+    font-size: 14px;
+    display: none;
+  }
+
+  .fallback a {
+    color: #0ea5e9;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .fallback a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -110,6 +124,9 @@
 
   <div class="timer" id="timer"></div>
   <div class="error" id="error">Avisale a Fabrizio</div>
+  <div class="fallback" id="fallback">
+    ¿No se abrió solo? <a id="linkReporte" target="_blank" rel="noopener">Abrir el reporte acá</a>
+  </div>
 </div>
 
 <script>
@@ -118,11 +135,14 @@ const WEBHOOK_URL = "https://envy-recollect-last.ngrok-free.dev/webhook/stock-in
 const btn = document.getElementById('btnGenerar');
 const timerEl = document.getElementById('timer');
 const errorEl = document.getElementById('error');
+const fallbackEl = document.getElementById('fallback');
+const linkEl = document.getElementById('linkReporte');
 
 let interval = null;
 
 async function generarReporte() {
   errorEl.style.display = 'none';
+  fallbackEl.style.display = 'none';
   btn.disabled = true;
   btn.classList.add('loading');
 
@@ -144,7 +164,15 @@ async function generarReporte() {
 
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
+
+    // Siempre dejamos el link de respaldo listo, se haya abierto o no el pop-up
+    linkEl.href = url;
+    fallbackEl.style.display = 'block';
+
+    const ventana = window.open(url, '_blank');
+    if (!ventana || ventana.closed || typeof ventana.closed === 'undefined') {
+      // Pop-up bloqueado: el link de respaldo ya está visible arriba
+    }
 
   } catch (e) {
     errorEl.style.display = 'block';
