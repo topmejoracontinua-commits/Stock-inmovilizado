@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Inmovilizado — Cubiertas</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 40px 32px;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 6px;
+  }
+
+  .sub {
+    color: #64748b;
+    font-size: 13px;
+    margin-bottom: 28px;
+  }
+
+  .btn {
+    background: #0ea5e9;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: background .15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .btn:hover:not(:disabled) { background: #0284c7; }
+  .btn:disabled { background: #334155; cursor: not-allowed; color: #94a3b8; }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: none;
+  }
+
+  .btn.loading .spinner { display: inline-block; }
+  .btn.loading .btn-label { display: none; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .timer {
+    margin-top: 14px;
+    font-size: 12px;
+    color: #64748b;
+    min-height: 16px;
+  }
+
+  .error {
+    margin-top: 16px;
+    font-size: 13px;
+    color: #f87171;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="icon">📦</div>
+  <h1>Stock Inmovilizado</h1>
+  <div class="sub">Cubiertas — reporte on-demand</div>
+
+  <button class="btn" id="btnGenerar">
+    <span class="spinner"></span>
+    <span class="btn-label">Generar reporte</span>
+  </button>
+
+  <div class="timer" id="timer"></div>
+  <div class="error" id="error">Avisale a Fabrizio</div>
+</div>
+
+<script>
+const WEBHOOK_URL = "https://envy-recollect-last.ngrok-free.dev/webhook/stock-inmovilizado";
+
+const btn = document.getElementById('btnGenerar');
+const timerEl = document.getElementById('timer');
+const errorEl = document.getElementById('error');
+
+let interval = null;
+
+async function generarReporte() {
+  errorEl.style.display = 'none';
+  btn.disabled = true;
+  btn.classList.add('loading');
+
+  const inicio = Date.now();
+  interval = setInterval(() => {
+    const segs = ((Date.now() - inicio) / 1000).toFixed(1);
+    timerEl.textContent = segs + 's';
+  }, 100);
+
+  try {
+    const res = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'ngrok-skip-browser-warning': 'true'
+      }
+    });
+
+    if (!res.ok) throw new Error('Respuesta no OK');
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+
+  } catch (e) {
+    errorEl.style.display = 'block';
+  } finally {
+    clearInterval(interval);
+    timerEl.textContent = '';
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+}
+
+btn.addEventListener('click', generarReporte);
+</script>
+
+</body>
+</html>
