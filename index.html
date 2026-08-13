@@ -28,10 +28,7 @@
     text-align: center;
   }
 
-  .icon {
-    font-size: 40px;
-    margin-bottom: 12px;
-  }
+  .icon { font-size: 40px; margin-bottom: 12px; }
 
   h1 {
     font-size: 20px;
@@ -40,11 +37,42 @@
     margin-bottom: 6px;
   }
 
-  .sub {
-    color: #64748b;
-    font-size: 13px;
-    margin-bottom: 28px;
+  .sub { color: #64748b; font-size: 13px; margin-bottom: 24px; }
+
+  .key-field { text-align: left; margin-bottom: 20px; }
+
+  .key-field label {
+    display: block;
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 6px;
   }
+
+  .key-field input[type="password"] {
+    width: 100%;
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .key-field input[type="password"]:focus {
+    outline: none;
+    border-color: #0ea5e9;
+  }
+
+  .remember {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .remember input { accent-color: #0ea5e9; }
 
   .btn {
     background: #0ea5e9;
@@ -81,32 +109,12 @@
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .timer {
-    margin-top: 14px;
-    font-size: 12px;
-    color: #64748b;
-    min-height: 16px;
-  }
+  .timer { margin-top: 14px; font-size: 12px; color: #64748b; min-height: 16px; }
 
-  .error {
-    margin-top: 16px;
-    font-size: 13px;
-    color: #f87171;
-    display: none;
-  }
+  .error { margin-top: 16px; font-size: 13px; color: #f87171; display: none; }
 
-  .fallback {
-    margin-top: 16px;
-    font-size: 14px;
-    display: none;
-  }
-
-  .fallback a {
-    color: #0ea5e9;
-    font-weight: 600;
-    text-decoration: none;
-  }
-
+  .fallback { margin-top: 16px; font-size: 14px; display: none; }
+  .fallback a { color: #0ea5e9; font-weight: 600; text-decoration: none; }
   .fallback a:hover { text-decoration: underline; }
 </style>
 </head>
@@ -116,6 +124,15 @@
   <div class="icon">📦</div>
   <h1>Stock Inmovilizado</h1>
   <div class="sub">Cubiertas — reporte on-demand</div>
+
+  <div class="key-field">
+    <label for="claveInput">Clave de acceso</label>
+    <input type="password" id="claveInput" placeholder="Ingresá la clave">
+    <div class="remember">
+      <input type="checkbox" id="recordarCheck">
+      <label for="recordarCheck">Recordar en este navegador</label>
+    </div>
+  </div>
 
   <button class="btn" id="btnGenerar">
     <span class="spinner"></span>
@@ -131,16 +148,38 @@
 
 <script>
 const WEBHOOK_URL = "https://envy-recollect-last.ngrok-free.dev/webhook/stock-inmovilizado";
+const HEADER_NAME = "X-Auth-Key";
+const STORAGE_KEY = "stock_inmovilizado_key";
 
 const btn = document.getElementById('btnGenerar');
 const timerEl = document.getElementById('timer');
 const errorEl = document.getElementById('error');
 const fallbackEl = document.getElementById('fallback');
 const linkEl = document.getElementById('linkReporte');
+const claveInput = document.getElementById('claveInput');
+const recordarCheck = document.getElementById('recordarCheck');
+
+const claveGuardada = localStorage.getItem(STORAGE_KEY);
+if (claveGuardada) {
+  claveInput.value = claveGuardada;
+  recordarCheck.checked = true;
+}
 
 let interval = null;
 
 async function generarReporte() {
+  const clave = claveInput.value.trim();
+  if (!clave) {
+    claveInput.focus();
+    return;
+  }
+
+  if (recordarCheck.checked) {
+    localStorage.setItem(STORAGE_KEY, clave);
+  } else {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
   errorEl.style.display = 'none';
   fallbackEl.style.display = 'none';
   btn.disabled = true;
@@ -156,25 +195,26 @@ async function generarReporte() {
     const res = await fetch(WEBHOOK_URL, {
       method: 'POST',
       headers: {
-        'ngrok-skip-browser-warning': 'true'
+        'ngrok-skip-browser-warning': 'true',
+        [HEADER_NAME]: clave
       }
     });
 
+    if (res.status === 403 || res.status === 401) {
+      throw new Error('Clave incorrecta');
+    }
     if (!res.ok) throw new Error('Respuesta no OK');
 
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
 
-    // Siempre dejamos el link de respaldo listo, se haya abierto o no el pop-up
     linkEl.href = url;
     fallbackEl.style.display = 'block';
 
-    const ventana = window.open(url, '_blank');
-    if (!ventana || ventana.closed || typeof ventana.closed === 'undefined') {
-      // Pop-up bloqueado: el link de respaldo ya está visible arriba
-    }
+    window.open(url, '_blank');
 
   } catch (e) {
+    errorEl.textContent = (e.message === 'Clave incorrecta') ? 'Clave incorrecta' : 'Avisale a Fabrizio';
     errorEl.style.display = 'block';
   } finally {
     clearInterval(interval);
@@ -185,6 +225,9 @@ async function generarReporte() {
 }
 
 btn.addEventListener('click', generarReporte);
+claveInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') generarReporte();
+});
 </script>
 
 </body>
