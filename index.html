@@ -48,20 +48,13 @@
     margin-bottom: 6px;
   }
 
-  .key-input-wrap {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
-
-  .key-field input[type="password"],
-  .key-field input[type="text"] {
+  .key-field input[type="password"] {
     width: 100%;
     background: #0f172a;
     border: 1px solid #334155;
     color: #e2e8f0;
     border-radius: 8px;
-    padding: 10px 40px 10px 12px;
+    padding: 10px 12px;
     font-size: 14px;
   }
 
@@ -69,33 +62,6 @@
     outline: none;
     border-color: #0ea5e9;
   }
-
-  .toggle-clave {
-    position: absolute;
-    right: 8px;
-    background: none;
-    border: none;
-    color: #64748b;
-    cursor: pointer;
-    padding: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .toggle-clave:hover { color: #e2e8f0; }
-  .toggle-clave svg { width: 18px; height: 18px; }
-
-  .remember {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 10px;
-    font-size: 12px;
-    color: #64748b;
-  }
-
-  .remember input { accent-color: #0ea5e9; }
 
   .btn {
     background: #0ea5e9;
@@ -150,23 +116,7 @@
 
   <div class="key-field">
     <label for="claveInput">Clave de acceso</label>
-    <div class="key-input-wrap">
-      <input type="password" id="claveInput" placeholder="Ingresá la clave">
-      <button type="button" class="toggle-clave" id="toggleClave" aria-label="Mostrar clave">
-        <svg id="iconOjo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-          <circle cx="12" cy="12" r="3"></circle>
-        </svg>
-        <svg id="iconOjoTachado" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-          <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-          <line x1="1" y1="1" x2="23" y2="23"></line>
-        </svg>
-      </button>
-    </div>
-    <div class="remember">
-      <input type="checkbox" id="recordarCheck">
-      <label for="recordarCheck">Recordar en este navegador</label>
-    </div>
+    <input type="password" id="claveInput" placeholder="Ingresá la clave">
   </div>
 
   <button class="btn" id="btnGenerar">
@@ -184,7 +134,6 @@
 <script>
 const WEBHOOK_URL = "https://envy-recollect-last.ngrok-free.dev/webhook/stock-inmovilizado";
 const HEADER_NAME = "X-Auth-Key";
-const STORAGE_KEY = "stock_inmovilizado_key";
 
 const btn = document.getElementById('btnGenerar');
 const timerEl = document.getElementById('timer');
@@ -192,24 +141,6 @@ const errorEl = document.getElementById('error');
 const fallbackEl = document.getElementById('fallback');
 const linkEl = document.getElementById('linkReporte');
 const claveInput = document.getElementById('claveInput');
-const recordarCheck = document.getElementById('recordarCheck');
-const toggleClave = document.getElementById('toggleClave');
-const iconOjo = document.getElementById('iconOjo');
-const iconOjoTachado = document.getElementById('iconOjoTachado');
-
-const claveGuardada = localStorage.getItem(STORAGE_KEY);
-if (claveGuardada) {
-  claveInput.value = claveGuardada;
-  recordarCheck.checked = true;
-}
-
-toggleClave.addEventListener('click', function() {
-  const esPassword = claveInput.type === 'password';
-  claveInput.type = esPassword ? 'text' : 'password';
-  iconOjo.style.display = esPassword ? 'none' : 'block';
-  iconOjoTachado.style.display = esPassword ? 'block' : 'none';
-  toggleClave.setAttribute('aria-label', esPassword ? 'Ocultar clave' : 'Mostrar clave');
-});
 
 let interval = null;
 
@@ -218,12 +149,6 @@ async function generarReporte() {
   if (!clave) {
     claveInput.focus();
     return;
-  }
-
-  if (recordarCheck.checked) {
-    localStorage.setItem(STORAGE_KEY, clave);
-  } else {
-    localStorage.removeItem(STORAGE_KEY);
   }
 
   errorEl.style.display = 'none';
